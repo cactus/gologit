@@ -1,0 +1,21 @@
+# gologit
+
+A simple wrapper for Go "log" that provides toggle-able debug support.
+
+## Usage
+
+    import (
+        "flag"
+        "github.com/cactus/gologit"
+    )
+    
+    var logger *gologit.DebugLogger
+
+    func main() {
+        debug := flag.Bool("debug", false, "Enable Debug Logging")
+        flag.Parse()
+
+        logger = gologit.New(*debug)
+        logger.Debugln("Logging enabled")
+    }
+
