@@ -6,6 +6,8 @@ package gologit
 import (
 	"log"
 	"os"
+	"os/signal"
+	"sync"
 )
 
 // A DebugLogger represents a logging object, that embeds log.Logger, and
@@ -13,18 +15,21 @@ import (
 type DebugLogger struct {
 	*log.Logger
 	debug bool
+	mx sync.Mutex
 }
 
 // New creates a new DebugLogger.
 // The debug argument specifies whether debug should be set or not.
 func New(debug bool) *DebugLogger {
-	return &DebugLogger{log.New(os.Stderr, "", log.LstdFlags), debug}
+	return &DebugLogger{log.New(os.Stderr, "", log.LstdFlags), debug, sync.Mutex{}}
 }
 
 // Toggles the debug state.
 // If debug is true, sets it to false.
 // If debug is false, sets it to true.
 func (l *DebugLogger) Toggle() {
+	l.mx.Lock()
+	defer l.mx.Unlock()
 	if l.debug == false {
 		l.debug = true
 	} else {
@@ -32,8 +37,32 @@ func (l *DebugLogger) Toggle() {
 	}
 }
 
+func (l *DebugLogger) ToggleOnSignal(sig os.Signal) {
+	debugSig := make(chan os.Signal, 1)
+	// spawn goroutine to handle signal/toggle of debug logging
+	go func() {
+		for {
+			<-debugSig
+			l.Toggle()
+			if l.State() {
+				l.Printf("Debug logging enabled")
+			} else {
+				l.Printf("Debug logging disabled")
+			}
+		}
+	}()
+	// notify send to debug sign channel on signusr1
+	signal.Notify(debugSig, sig)
+}
+
+func (l *DebugLogger) State() bool {
+	return l.debug
+}
+
 // Set the debug state directly.
 func (l *DebugLogger) Set(debug bool) {
+	l.mx.Lock()
+	defer l.mx.Unlock()
 	l.debug = debug
 }
 
