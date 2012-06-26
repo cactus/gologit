@@ -23,3 +23,6 @@ A simple wrapper for Go "log" that provides toggle-able debug support.
         logger.Debugln("Logging enabled")
     }
 
+## License
+
+Released under the [MIT license](http://www.opensource.org/licenses/mit-license.php). See `LICENSE` file for details.
