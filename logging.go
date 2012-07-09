@@ -10,6 +10,8 @@ import (
 	"sync"
 )
 
+var Logger = New(false)
+
 // A DebugLogger represents a logging object, that embeds log.Logger, and
 // provides support for a toggle-able debug flag.
 type DebugLogger struct {
