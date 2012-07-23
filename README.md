@@ -1,4 +1,5 @@
-# gologit
+gologit
+=======
 
 A simple wrapper for Go "log" that provides toggle-able debug support.
 
@@ -83,6 +84,14 @@ Pass it like a logging potato:
         SomeOtherFunc(logger)
     }
 
+## Documentation
+
+More documentation available at [go.pkgdoc.org][1]
+
 ## License
 
-Released under the [MIT license](http://www.opensource.org/licenses/mit-license.php). See `LICENSE` file for details.
+Released under the [MIT license][2]. See `LICENSE` file for details.
+
+[1]: http://go.pkgdoc.org/github.com/cactus/gologit
+[2]: http://www.opensource.org/licenses/mit-license.php
+
