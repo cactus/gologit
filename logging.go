@@ -129,3 +129,48 @@ func Debug(v ...interface{}) {
 func Debugln(v ...interface{}) {
 	Logger.Debugln(v...)
 }
+
+// Logs to the default Logger. See Logger.Print
+func Print(v ...interface{}) {
+	Logger.Print(v...)
+}
+
+// Logs to the default Logger. See Logger.Printf
+func Printf(format string, v ...interface{}) {
+	Logger.Printf(format, v...)
+}
+
+// Logs to the default Logger. See Logger.Println
+func Println(v ...interface{}) {
+	Logger.Println(v...)
+}
+
+// Logs to the default Logger. See Logger.Fatal
+func Fatal(v ...interface{}) {
+	Logger.Fatal(v...)
+}
+
+// Logs to the default Logger. See Logger.Fatalf
+func Fatalf(format string, v ...interface{}) {
+	Logger.Fatalf(format, v...)
+}
+
+// Logs to the default Logger. See Logger.Fatalln
+func Fatalln(v ...interface{}) {
+	Logger.Fatalln(v...)
+}
+
+// Logs to the default Logger. See Logger.Panic
+func Panic(v ...interface{}) {
+	Logger.Panic(v...)
+}
+
+// Logs to the default Logger. See Logger.Panicf
+func Panicf(format string, v ...interface{}) {
+	Logger.Panicf(format, v...)
+}
+
+// Logs to the default Logger. See Logger.Panicln
+func Panicln(v ...interface{}) {
+	Logger.Panicln(v...)
+}
