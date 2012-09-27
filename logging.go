@@ -57,6 +57,7 @@ func (l *DebugLogger) ToggleOnSignal(sig os.Signal) {
 	signal.Notify(debugSig, sig)
 }
 
+
 func (l *DebugLogger) State() bool {
 	return l.debug
 }
@@ -90,4 +91,41 @@ func (l *DebugLogger) Debugln(v ...interface{}) {
 	if l.debug == true {
 		l.Println(v...)
 	}
+}
+
+
+// These functions call the default Logger
+
+// Toggles the debug state of the default Logger. See Logger.Toggle
+func Toggle() {
+	Logger.Toggle()
+}
+
+func ToggleOnSignal(sig os.Signal) {
+	Logger.ToggleOnSignal(sig)
+}
+
+// Gets the state of the default Logger. See Logger.State
+func State() bool {
+	return Logger.State()
+}
+
+// Sets the state of the default Logger. See Logger.Set
+func Set(debug bool) {
+	Logger.Set(debug)
+}
+
+// Logs to the default Logger. See Logger.Debugf
+func Debugf(format string, v ...interface{}) {
+	Logger.Debugf(format, v...)
+}
+
+// Logs to the default Logger. See Logger.Debug
+func Debug(v ...interface{}) {
+	Logger.Debug(v...)
+}
+
+// Logs to the default Logger. See Logger.Debugln
+func Debugln(v ...interface{}) {
+	Logger.Debugln(v...)
 }
