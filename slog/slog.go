@@ -19,17 +19,17 @@ type severity int32 // sync/atomic int32
 const (
 	DEBUG severity = iota
 	INFO
-	WARNING
+	WARN
 	ERROR
 	FATAL
 )
 
 var severityName = []string{
-	DEBUG:   "DEBUG",
-	INFO:    "INFO",
-	WARNING: "WARNING",
-	ERROR:   "ERROR",
-	FATAL:   "FATAL",
+	DEBUG: "DEBUG",
+	INFO:  "INFO",
+	WARN:  "WARN",
+	ERROR: "ERROR",
+	FATAL: "FATAL",
 }
 
 type LeveledLogger struct {
@@ -96,12 +96,12 @@ func (l *LeveledLogger) Infoln(v ...interface{}) {
 	l.logln(INFO, v...)
 }
 
-func (l *LeveledLogger) Warningf(format string, v ...interface{}) {
-	l.logf(WARNING, format, v...)
+func (l *LeveledLogger) Warnf(format string, v ...interface{}) {
+	l.logf(WARN, format, v...)
 }
 
-func (l *LeveledLogger) Warningln(v ...interface{}) {
-	l.logln(WARNING, v...)
+func (l *LeveledLogger) Warnln(v ...interface{}) {
+	l.logln(WARN, v...)
 }
 
 func (l *LeveledLogger) Errorf(format string, v ...interface{}) {
@@ -185,12 +185,12 @@ func Infoln(v ...interface{}) {
 	logger.Infoln(v...)
 }
 
-func Warningf(format string, v ...interface{}) {
-	logger.Warningf(format, v...)
+func Warnf(format string, v ...interface{}) {
+	logger.Warnf(format, v...)
 }
 
-func Warningln(v ...interface{}) {
-	logger.Warningln(v...)
+func Warnln(v ...interface{}) {
+	logger.Warnln(v...)
 }
 
 func Errorf(format string, v ...interface{}) {
