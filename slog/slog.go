@@ -12,7 +12,7 @@ import (
 )
 
 var timeFormat = "2006-01-02T15:04:05.000000"
-var logger = New(INFO, "")
+var Logger = New(INFO, "")
 
 type severity int32 // sync/atomic int32
 
@@ -172,61 +172,61 @@ func isatty(f *os.File) bool {
 */
 
 func GetLevel() severity {
-	return logger.GetLevel()
+	return Logger.GetLevel()
 }
 
 func SetLevel(s severity) {
-	logger.SetLevel(s)
+	Logger.SetLevel(s)
 }
 
 func IsDebug() bool {
-	return logger.IsDebug()
+	return Logger.IsDebug()
 }
 
 func Debugf(format string, v ...interface{}) {
-	logger.Debugf(format, v...)
+	Logger.Debugf(format, v...)
 }
 
 func Debugln(v ...interface{}) {
-	logger.Debugln(v...)
+	Logger.Debugln(v...)
 }
 
 func Infof(format string, v ...interface{}) {
-	logger.Infof(format, v...)
+	Logger.Infof(format, v...)
 }
 
 func Infoln(v ...interface{}) {
-	logger.Infoln(v...)
+	Logger.Infoln(v...)
 }
 
 func Warnf(format string, v ...interface{}) {
-	logger.Warnf(format, v...)
+	Logger.Warnf(format, v...)
 }
 
 func Warnln(v ...interface{}) {
-	logger.Warnln(v...)
+	Logger.Warnln(v...)
 }
 
 func Errorf(format string, v ...interface{}) {
-	logger.Errorf(format, v...)
+	Logger.Errorf(format, v...)
 }
 
 func Errorln(v ...interface{}) {
-	logger.Errorln(v...)
+	Logger.Errorln(v...)
 }
 
 func Fatalf(format string, v ...interface{}) {
-	logger.Fatalf(format, v...)
+	Logger.Fatalf(format, v...)
 }
 
 func Fatalln(v ...interface{}) {
-	logger.Fatalln(v...)
+	Logger.Fatalln(v...)
 }
 
 func Panicf(format string, v ...interface{}) {
-	logger.Panicf(format, v...)
+	Logger.Panicf(format, v...)
 }
 
 func Panicln(v ...interface{}) {
-	logger.Panicln(v...)
+	Logger.Panicln(v...)
 }
