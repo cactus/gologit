@@ -45,7 +45,7 @@ func (l *LeveledLogger) header(s severity, t *time.Time) *bytes.Buffer {
 }
 
 func (l *LeveledLogger) logln(s severity, v ...interface{}) {
-	if l.severity >= s {
+	if s >= l.severity {
 		t := time.Now()
 		buf := l.header(s, &t)
 		fmt.Fprintln(buf, v...)
@@ -54,7 +54,7 @@ func (l *LeveledLogger) logln(s severity, v ...interface{}) {
 }
 
 func (l *LeveledLogger) logf(s severity, format string, v ...interface{}) {
-	if l.severity >= s {
+	if s >= l.severity {
 		t := time.Now()
 		buf := l.header(s, &t)
 		fmt.Fprintf(buf, format, v...)
