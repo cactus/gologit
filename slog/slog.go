@@ -6,17 +6,13 @@ package slog
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os"
-	"runtime"
 	"sync"
-	"syscall"
 	"time"
-	"unsafe"
 )
 
 var timeFormat = "2006-01-02T15:04:05.000000"
-var logger = New(INFO)
+var logger = New(INFO, "")
 
 type severity int32 // sync/atomic int32
 
@@ -37,14 +33,14 @@ var severityName = []string{
 }
 
 type LeveledLogger struct {
-	*log.Logger
+	prefix   string
 	severity severity
 	mx       sync.Mutex
 }
 
 func (l *LeveledLogger) header(s severity, t *time.Time) *bytes.Buffer {
 	b := new(bytes.Buffer)
-	fmt.Fprintf(b, "%s %-5.5s ", t.Format(timeFormat), severityName[s])
+	fmt.Fprintf(b, "%s %-5.5s %s", t.Format(timeFormat), severityName[s], l.prefix)
 	return b
 }
 
@@ -69,14 +65,82 @@ func (l *LeveledLogger) logf(s severity, format string, v ...interface{}) {
 	}
 }
 
-func New(level severity) *LeveledLogger {
+func (l *LeveledLogger) GetLevel() severity {
+	return l.severity
+}
+
+func (l *LeveledLogger) SetLevel(s severity) {
+	l.severity = s
+}
+
+func (l *LeveledLogger) IsDebug() bool {
+	if l.severity == DEBUG {
+		return true
+	}
+	return false
+}
+
+func (l *LeveledLogger) Debugf(format string, v ...interface{}) {
+	l.logf(DEBUG, format, v...)
+}
+
+func (l *LeveledLogger) Debugln(v ...interface{}) {
+	l.logln(DEBUG, v...)
+}
+
+func (l *LeveledLogger) Infof(format string, v ...interface{}) {
+	l.logf(INFO, format, v...)
+}
+
+func (l *LeveledLogger) Infoln(v ...interface{}) {
+	l.logln(INFO, v...)
+}
+
+func (l *LeveledLogger) Warningf(format string, v ...interface{}) {
+	l.logf(WARNING, format, v...)
+}
+
+func (l *LeveledLogger) Warningln(v ...interface{}) {
+	l.logln(WARNING, v...)
+}
+
+func (l *LeveledLogger) Errorf(format string, v ...interface{}) {
+	l.logf(ERROR, format, v...)
+}
+
+func (l *LeveledLogger) Errorln(v ...interface{}) {
+	l.logln(ERROR, v...)
+}
+
+func (l *LeveledLogger) Fatalf(format string, v ...interface{}) {
+	l.logf(FATAL, format, v...)
+	os.Exit(1)
+}
+
+func (l *LeveledLogger) Fatalln(v ...interface{}) {
+	l.logln(FATAL, v...)
+	os.Exit(1)
+}
+
+func (l *LeveledLogger) Panicf(format string, v ...interface{}) {
+	l.logf(FATAL, format, v...)
+	panic(fmt.Sprintf(format, v...))
+}
+
+func (l *LeveledLogger) Panicln(v ...interface{}) {
+	l.logln(FATAL, v...)
+	panic(fmt.Sprintln(v...))
+}
+
+func New(level severity, prefix string) *LeveledLogger {
 	return &LeveledLogger{
-		log.New(os.Stderr, "", log.LstdFlags),
+		prefix,
 		level,
 		sync.Mutex{},
 	}
 }
 
+/*
 // isatty returns true if f is a TTY, false otherwise.
 func isatty(f *os.File) bool {
 	switch runtime.GOOS {
@@ -91,72 +155,64 @@ func isatty(f *os.File) bool {
 		uintptr(unsafe.Pointer(&t)))
 	return errno == 0
 }
+*/
 
 func GetLevel() severity {
-	return logger.severity
+	return logger.GetLevel()
 }
 
 func SetLevel(s severity) {
-	logger.severity = s
+	logger.SetLevel(s)
 }
 
 func IsDebug() bool {
-	if logger.severity == DEBUG {
-		return true
-	}
-	return false
+	return logger.IsDebug()
 }
 
 func Debugf(format string, v ...interface{}) {
-	logger.logf(DEBUG, format, v...)
+	logger.Debugf(format, v...)
 }
 
 func Debugln(v ...interface{}) {
-	logger.logln(DEBUG, v...)
+	logger.Debugln(v...)
 }
 
 func Infof(format string, v ...interface{}) {
-	logger.logf(INFO, format, v...)
+	logger.Infof(format, v...)
 }
 
 func Infoln(v ...interface{}) {
-	logger.logln(INFO, v...)
+	logger.Infoln(v...)
 }
 
 func Warningf(format string, v ...interface{}) {
-	logger.logf(WARNING, format, v...)
+	logger.Warningf(format, v...)
 }
 
 func Warningln(v ...interface{}) {
-	logger.logln(WARNING, v...)
+	logger.Warningln(v...)
 }
 
 func Errorf(format string, v ...interface{}) {
-	logger.logf(ERROR, format, v...)
+	logger.Errorf(format, v...)
 }
 
 func Errorln(v ...interface{}) {
-	logger.logln(ERROR, v...)
+	logger.Errorln(v...)
 }
 
 func Fatalf(format string, v ...interface{}) {
-	logger.logf(FATAL, format, v...)
-	os.Exit(1)
+	logger.Fatalf(format, v...)
 }
 
 func Fatalln(v ...interface{}) {
-	logger.logln(FATAL, v...)
-	os.Exit(1)
+	logger.Fatalln(v...)
 }
 
-// Logs to the default Logger. See Logger.Panicf
 func Panicf(format string, v ...interface{}) {
-	logger.logf(FATAL, format, v...)
-	panic(fmt.Sprintf(format, v...))
+	logger.Panicf(format, v...)
 }
 
-// Logs to the default Logger. See Logger.Panicln
 func Panicln(v ...interface{}) {
-	logger.logln(FATAL, v...)
-	panic(fmt.Sprintln(v...))
+	logger.Panicln(v...)
 }
