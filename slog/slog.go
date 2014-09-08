@@ -65,6 +65,20 @@ func (l *LeveledLogger) logf(s severity, format string, v ...interface{}) {
 	}
 }
 
+func (l *LeveledLogger) Write(p []byte) (n int, err error) {
+	t := time.Now()
+	buf := l.header(INFO, &t)
+	buf.Write(p)
+	if buf.Bytes()[buf.Len()-1] != '\n' {
+		buf.WriteByte('\n')
+	}
+	written, err := buf.WriteTo(os.Stderr)
+	if err != nil {
+		return int(written), err
+	}
+	return int(written), nil
+}
+
 func (l *LeveledLogger) GetLevel() severity {
 	return l.severity
 }
