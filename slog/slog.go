@@ -12,7 +12,7 @@ import (
 )
 
 var timeFormat = "2006-01-02T15:04:05.000000"
-var Logger = New(INFO, "")
+var Logger = New(INFO, timeFormat, "")
 
 type severity int32 // sync/atomic int32
 
@@ -33,14 +33,18 @@ var severityName = []string{
 }
 
 type LeveledLogger struct {
-	prefix   string
-	severity severity
-	mx       sync.Mutex
+	prefix     string
+	timeformat string
+	severity   severity
+	mx         sync.Mutex
 }
 
 func (l *LeveledLogger) header(s severity, t *time.Time) *bytes.Buffer {
 	b := new(bytes.Buffer)
-	fmt.Fprintf(b, "%s %-5.5s %s", t.Format(timeFormat), severityName[s], l.prefix)
+	if l.timeformat != "" {
+		fmt.Fprintf(b, "%s ", t.Format(l.timeformat))
+	}
+	fmt.Fprintf(b, "%-5.5s %s", severityName[s], l.prefix)
 	return b
 }
 
@@ -146,8 +150,9 @@ func (l *LeveledLogger) Panicln(v ...interface{}) {
 	panic(fmt.Sprintln(v...))
 }
 
-func New(level severity, prefix string) *LeveledLogger {
+func New(level severity, timeformat string, prefix string) *LeveledLogger {
 	return &LeveledLogger{
+		timeformat,
 		prefix,
 		level,
 		sync.Mutex{},
