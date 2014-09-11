@@ -33,8 +33,8 @@ var severityName = []string{
 }
 
 type LeveledLogger struct {
-	prefix     string
 	timeformat string
+	prefix     string
 	severity   severity
 	mx         sync.Mutex
 }
