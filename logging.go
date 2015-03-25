@@ -17,13 +17,25 @@ var Logger = New(false)
 type DebugLogger struct {
 	*log.Logger
 	debug bool
-	mx sync.Mutex
+	mx    sync.Mutex
 }
 
 // New creates a new DebugLogger.
 // The debug argument specifies whether debug should be set or not.
 func New(debug bool) *DebugLogger {
-	return &DebugLogger{log.New(os.Stderr, "", log.LstdFlags), debug, sync.Mutex{}}
+	flags := log.LstdFlags
+	if debug == true {
+		flags = flags | log.Lshortfile
+	}
+	return &DebugLogger{log.New(os.Stderr, "", flags), debug, sync.Mutex{}}
+}
+
+func (l *DebugLogger) updateLogFlags() {
+	if l.debug == false {
+		l.Logger.SetFlags(l.Logger.Flags() | log.Lshortfile)
+	} else {
+		l.Logger.SetFlags(l.Logger.Flags() ^ log.Lshortfile)
+	}
 }
 
 // Toggles the debug state.
@@ -37,6 +49,7 @@ func (l *DebugLogger) Toggle() {
 	} else {
 		l.debug = false
 	}
+	l.updateLogFlags()
 }
 
 func (l *DebugLogger) ToggleOnSignal(sig os.Signal) {
@@ -57,7 +70,6 @@ func (l *DebugLogger) ToggleOnSignal(sig os.Signal) {
 	signal.Notify(debugSig, sig)
 }
 
-
 func (l *DebugLogger) State() bool {
 	return l.debug
 }
@@ -67,6 +79,7 @@ func (l *DebugLogger) Set(debug bool) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 	l.debug = debug
+	l.updateLogFlags()
 }
 
 // Debugf calls log.Printf if debug is true.
@@ -92,7 +105,6 @@ func (l *DebugLogger) Debugln(v ...interface{}) {
 		l.Println(v...)
 	}
 }
-
 
 // These functions call the default Logger
 
