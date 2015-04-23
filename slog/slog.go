@@ -1,6 +1,4 @@
-// Package gogitlog implements a very simple wrapper around the
-// Go "log" package, providing support for a toggle-able debug flag
-// and a couple of functions that log or not based on that flag.
+// Package slog implements a very simple levelled logger
 package slog
 
 import (

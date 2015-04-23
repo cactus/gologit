@@ -1,9 +1,10 @@
-// Package gogitlog implements a very simple wrapper around the
+// Package gologit implements a very simple wrapper around the
 // Go "log" package, providing support for a toggle-able debug flag
 // and a couple of functions that log or not based on that flag.
 package gologit
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -86,7 +87,7 @@ func (l *DebugLogger) Set(debug bool) {
 // If debug is false, does nothing.
 func (l *DebugLogger) Debugf(format string, v ...interface{}) {
 	if l.debug == true {
-		l.Printf(format, v...)
+		l.Output(2, fmt.Sprintf(format, v...))
 	}
 }
 
@@ -94,7 +95,7 @@ func (l *DebugLogger) Debugf(format string, v ...interface{}) {
 // If debug is false, does nothing.
 func (l *DebugLogger) Debug(v ...interface{}) {
 	if l.debug == true {
-		l.Print(v...)
+		l.Output(2, fmt.Sprint(v...))
 	}
 }
 
@@ -102,7 +103,7 @@ func (l *DebugLogger) Debug(v ...interface{}) {
 // If debug is false, does nothing.
 func (l *DebugLogger) Debugln(v ...interface{}) {
 	if l.debug == true {
-		l.Println(v...)
+		l.Output(2, fmt.Sprintln(v...))
 	}
 }
 
@@ -129,60 +130,75 @@ func Set(debug bool) {
 
 // Logs to the default Logger. See Logger.Debugf
 func Debugf(format string, v ...interface{}) {
-	Logger.Debugf(format, v...)
+	if Logger.State() == true {
+		Logger.Output(2, fmt.Sprintf(format, v...))
+	}
 }
 
 // Logs to the default Logger. See Logger.Debug
 func Debug(v ...interface{}) {
-	Logger.Debug(v...)
+	if Logger.State() == true {
+		Logger.Output(2, fmt.Sprint(v...))
+	}
 }
 
 // Logs to the default Logger. See Logger.Debugln
 func Debugln(v ...interface{}) {
-	Logger.Debugln(v...)
-}
-
-// Logs to the default Logger. See Logger.Print
-func Print(v ...interface{}) {
-	Logger.Print(v...)
+	if Logger.State() == true {
+		Logger.Output(2, fmt.Sprintln(v...))
+	}
 }
 
 // Logs to the default Logger. See Logger.Printf
 func Printf(format string, v ...interface{}) {
-	Logger.Printf(format, v...)
+	Logger.Output(2, fmt.Sprintf(format, v...))
+}
+
+// Logs to the default Logger. See Logger.Print
+func Print(v ...interface{}) {
+	Logger.Output(2, fmt.Sprint(v...))
 }
 
 // Logs to the default Logger. See Logger.Println
 func Println(v ...interface{}) {
-	Logger.Println(v...)
+	Logger.Output(2, fmt.Sprintln(v...))
 }
 
 // Logs to the default Logger. See Logger.Fatal
 func Fatal(v ...interface{}) {
-	Logger.Fatal(v...)
+	Logger.Output(2, fmt.Sprint(v...))
+	os.Exit(1)
 }
 
 // Logs to the default Logger. See Logger.Fatalf
 func Fatalf(format string, v ...interface{}) {
-	Logger.Fatalf(format, v...)
+	Logger.Output(2, fmt.Sprintf(format, v...))
+	os.Exit(1)
 }
 
 // Logs to the default Logger. See Logger.Fatalln
 func Fatalln(v ...interface{}) {
-	Logger.Fatalln(v...)
+	Logger.Output(2, fmt.Sprintln(v...))
+	os.Exit(1)
 }
 
 // Logs to the default Logger. See Logger.Panic
 func Panic(v ...interface{}) {
-	Logger.Panic(v...)
+	s := fmt.Sprint(v...)
+	Logger.Output(2, s)
+	panic(s)
 }
 
 // Logs to the default Logger. See Logger.Panicf
 func Panicf(format string, v ...interface{}) {
-	Logger.Panicf(format, v...)
+	s := fmt.Sprintf(format, v...)
+	Logger.Output(2, s)
+	panic(s)
 }
 
 // Logs to the default Logger. See Logger.Panicln
 func Panicln(v ...interface{}) {
-	Logger.Panicln(v...)
+	s := fmt.Sprintln(v...)
+	Logger.Output(2, s)
+	panic(s)
 }
