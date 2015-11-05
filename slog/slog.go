@@ -17,7 +17,6 @@ type severity int32 // sync/atomic int32
 const (
 	DEBUG severity = iota
 	INFO
-	WARN
 	ERROR
 	FATAL
 )
@@ -25,7 +24,6 @@ const (
 var severityName = []string{
 	DEBUG: "DEBUG",
 	INFO:  "INFO",
-	WARN:  "WARN",
 	ERROR: "ERROR",
 	FATAL: "FATAL",
 }
@@ -112,14 +110,6 @@ func (l *LeveledLogger) Infoln(v ...interface{}) {
 	l.logln(INFO, v...)
 }
 
-func (l *LeveledLogger) Warnf(format string, v ...interface{}) {
-	l.logf(WARN, format, v...)
-}
-
-func (l *LeveledLogger) Warnln(v ...interface{}) {
-	l.logln(WARN, v...)
-}
-
 func (l *LeveledLogger) Errorf(format string, v ...interface{}) {
 	l.logf(ERROR, format, v...)
 }
@@ -200,14 +190,6 @@ func Infof(format string, v ...interface{}) {
 
 func Infoln(v ...interface{}) {
 	Logger.Infoln(v...)
-}
-
-func Warnf(format string, v ...interface{}) {
-	Logger.Warnf(format, v...)
-}
-
-func Warnln(v ...interface{}) {
-	Logger.Warnln(v...)
 }
 
 func Errorf(format string, v ...interface{}) {
