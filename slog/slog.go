@@ -10,7 +10,20 @@ import (
 )
 
 var timeFormat = "2006-01-02T15:04:05.000000"
-var Logger = New(INFO, timeFormat, "")
+var Logger = New(INFO, timeFormat, "", nil)
+var bufpool = &sync.Pool{New: func() interface{} {
+	return bytes.NewBuffer(make([]byte, 0, 128))
+}}
+
+func getBuffer() *bytes.Buffer {
+	buf := bufpool.Get().(*bytes.Buffer)
+	return buf
+}
+
+func putBuffer(buf *bytes.Buffer) {
+	buf.Reset()
+	bufpool.Put(buf)
+}
 
 type severity int32 // sync/atomic int32
 
@@ -33,10 +46,11 @@ type LeveledLogger struct {
 	prefix     string
 	severity   severity
 	mx         sync.Mutex
+	output     *os.File
 }
 
 func (l *LeveledLogger) header(s severity, t *time.Time) *bytes.Buffer {
-	b := new(bytes.Buffer)
+	b := getBuffer()
 	if l.timeformat != "" {
 		fmt.Fprintf(b, "%s ", t.Format(l.timeformat))
 	}
@@ -48,8 +62,9 @@ func (l *LeveledLogger) logln(s severity, v ...interface{}) {
 	if s >= l.severity {
 		t := time.Now()
 		buf := l.header(s, &t)
+		defer putBuffer(buf)
 		fmt.Fprintln(buf, v...)
-		buf.WriteTo(os.Stderr)
+		buf.WriteTo(l.output)
 	}
 }
 
@@ -57,26 +72,32 @@ func (l *LeveledLogger) logf(s severity, format string, v ...interface{}) {
 	if s >= l.severity {
 		t := time.Now()
 		buf := l.header(s, &t)
+		defer putBuffer(buf)
 		fmt.Fprintf(buf, format, v...)
 		if buf.Bytes()[buf.Len()-1] != '\n' {
 			buf.WriteByte('\n')
 		}
-		buf.WriteTo(os.Stderr)
+		buf.WriteTo(l.output)
 	}
 }
 
 func (l *LeveledLogger) Write(p []byte) (n int, err error) {
 	t := time.Now()
 	buf := l.header(INFO, &t)
+	defer putBuffer(buf)
 	buf.Write(p)
 	if buf.Bytes()[buf.Len()-1] != '\n' {
 		buf.WriteByte('\n')
 	}
-	written, err := buf.WriteTo(os.Stderr)
+	written, err := buf.WriteTo(l.output)
 	if err != nil {
 		return int(written), err
 	}
 	return int(written), nil
+}
+
+func (l *LeveledLogger) SetOutput(output *os.File) {
+	l.output = output
 }
 
 func (l *LeveledLogger) GetLevel() severity {
@@ -138,12 +159,16 @@ func (l *LeveledLogger) Panicln(v ...interface{}) {
 	panic(fmt.Sprintln(v...))
 }
 
-func New(level severity, timeformat string, prefix string) *LeveledLogger {
+func New(level severity, timeformat string, prefix string, output *os.File) *LeveledLogger {
+	if output == nil {
+		output = os.Stderr
+	}
 	return &LeveledLogger{
 		timeformat,
 		prefix,
 		level,
 		sync.Mutex{},
+		output,
 	}
 }
 
