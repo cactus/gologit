@@ -1,3 +1,7 @@
+// Copyright (c) 2012-2016 Eli Janssen
+// Use of this source code is governed by an MIT-style
+// license that can be found in the LICENSE file.
+
 // Package gologit implements a very simple wrapper around the
 // Go "log" package, providing support for a toggle-able debug flag
 // and a couple of functions that log or not based on that flag.
