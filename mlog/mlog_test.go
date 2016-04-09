@@ -20,14 +20,14 @@ var tests = []tester{
 		"test one %d",
 		[]interface{}{
 			1,
-			&ExtraMap{"x": "y"},
+			&LogMap{"x": "y"},
 		},
 	},
 	{
 		`level="info" msg="test one 1" x="y"`,
 		"test one %d",
 		[]interface{}{
-			&ExtraMap{"x": "y"},
+			&LogMap{"x": "y"},
 			1,
 		},
 	},
@@ -36,22 +36,22 @@ var tests = []tester{
 		"test one %s",
 		[]interface{}{
 			1,
-			&ExtraMap{"x": "y"},
+			&LogMap{"x": "y"},
 		},
 	},
 	{
 		`level="info" msg="test one" x="y" t="u"`,
 		"test one",
 		[]interface{}{
-			ExtraMap{"x": "y"},
-			&ExtraMap{"t": "u"},
+			LogMap{"x": "y"},
+			&LogMap{"t": "u"},
 		},
 	},
 	{
 		`level="info" msg="test one" x="1" y="2" z="3"`,
 		"test one",
 		[]interface{}{
-			&ExtraMap{
+			&LogMap{
 				"x": 1,
 				"y": 2,
 				"z": 3,
@@ -95,7 +95,7 @@ func BenchmarkSLoggingBase(b *testing.B) {
 	logger := New(ioutil.Discard, Lbase)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Printf("this is a test: %s", "test", &ExtraMap{"x": 42})
+		logger.Printf("this is a test: %s", "test", &LogMap{"x": 42})
 	}
 }
 
@@ -103,7 +103,7 @@ func BenchmarkSLoggingTime(b *testing.B) {
 	logger := New(ioutil.Discard, Ltime)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Printf("this is a test: %s", "test", &ExtraMap{"x": 42})
+		logger.Printf("this is a test: %s", "test", &LogMap{"x": 42})
 	}
 }
 
@@ -111,7 +111,7 @@ func BenchmarkSLoggingSortedKeys(b *testing.B) {
 	logger := New(ioutil.Discard, Lsort)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Printf("this is a test: %s", "test", &ExtraMap{"x": 42})
+		logger.Printf("this is a test: %s", "test", &LogMap{"x": 42})
 	}
 }
 
@@ -119,7 +119,7 @@ func BenchmarkSLoggingDebugEnabled(b *testing.B) {
 	logger := New(ioutil.Discard, Ldebug)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Debugf("this is a test: %s", "test", &ExtraMap{"x": 42})
+		logger.Debugf("this is a test: %s", "test", &LogMap{"x": 42})
 	}
 }
 
@@ -127,7 +127,7 @@ func BenchmarkSLoggingDebugDisabled(b *testing.B) {
 	logger := New(ioutil.Discard, Lbase)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Debugf("this is a test: %s", "test", &ExtraMap{"x": 42})
+		logger.Debugf("this is a test: %s", "test", &LogMap{"x": 42})
 	}
 }
 
@@ -160,7 +160,7 @@ func BenchmarkPLoggingBase(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Printf("this is a test: %s", "test", &ExtraMap{"x": 42})
+			logger.Printf("this is a test: %s", "test", &LogMap{"x": 42})
 		}
 	})
 }
@@ -170,7 +170,7 @@ func BenchmarkPLoggingTime(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Printf("this is a test: %s", "test", &ExtraMap{"x": 42})
+			logger.Printf("this is a test: %s", "test", &LogMap{"x": 42})
 		}
 	})
 }
@@ -180,7 +180,7 @@ func BenchmarkPLoggingSortedKeys(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Printf("this is a test: %s", "test", &ExtraMap{"x": 42})
+			logger.Printf("this is a test: %s", "test", &LogMap{"x": 42})
 		}
 	})
 }
@@ -190,7 +190,7 @@ func BenchmarkPLoggingDebugEnabled(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Debugf("this is a test: %s", "test", &ExtraMap{"x": 42})
+			logger.Debugf("this is a test: %s", "test", &LogMap{"x": 42})
 		}
 	})
 }
@@ -200,7 +200,7 @@ func BenchmarkPLoggingDebugDisabled(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Debugf("this is a test: %s", "test", &ExtraMap{"x": 42})
+			logger.Debugf("this is a test: %s", "test", &LogMap{"x": 42})
 		}
 	})
 }

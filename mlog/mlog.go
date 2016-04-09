@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 )
@@ -30,7 +31,7 @@ const (
 	Lstd   = Lbase | Ltime
 )
 
-type ExtraMap map[string]interface{}
+type LogMap map[string]interface{}
 
 // A Logger represents a logging object, that embeds log.Logger, and
 // provides support for a toggle-able debug flag.
@@ -40,9 +41,11 @@ type Logger struct {
 	flags uint64
 }
 
-func (l *Logger) Output(depth int, level string, format string, v ...interface{}) {
+func (l *Logger) Output(depth int, level string, format string, extra ...interface{}) {
 	// get this as soon as possible
 	now := formattedDate.String()
+
+	//buf := make([]byte, 0, 1500)
 
 	buf := bufPool.Get()
 	defer bufPool.Put(buf)
@@ -71,26 +74,36 @@ func (l *Logger) Output(depth int, level string, format string, v ...interface{}
 		buf.WriteByte('"')
 	}
 
-	var mapv []*ExtraMap
+	var mapv []*LogMap
 	var fmtv []interface{}
-	if len(v) > 0 {
-		mapv = make([]*ExtraMap, 0)
+	if len(extra) > 0 {
+		mapv = make([]*LogMap, 0)
 		fmtv = make([]interface{}, 0)
-		for _, x := range v {
-			if y, ok := x.(*ExtraMap); ok {
-				mapv = append(mapv, y)
-			} else if y, ok := x.(ExtraMap); ok {
-				mapv = append(mapv, &y)
-			} else {
-				fmtv = append(fmtv, x)
+		for _, v := range extra {
+			switch x := v.(type) {
+			case *LogMap:
+				mapv = append(mapv, x)
+			case LogMap:
+				mapv = append(mapv, &x)
+			default:
+				fmtv = append(fmtv, v)
 			}
 		}
 	}
 
 	buf.WriteString(` msg="`)
-	if format != "" {
+	lfmtv := len(fmtv)
+
+	if lfmtv > 0 && strings.Contains(format, "%") {
 		fmt.Fprintf(buf, format, fmtv...)
+	} else {
+		buf.WriteString(format)
+		if lfmtv > 0 {
+			buf.WriteByte(' ')
+			fmt.Fprint(buf, fmtv...)
+		}
 	}
+
 	buf.WriteByte('"')
 
 	if len(mapv) > 0 {
@@ -105,7 +118,7 @@ func (l *Logger) Output(depth int, level string, format string, v ...interface{}
 					buf.WriteByte(' ')
 					buf.WriteString(k)
 					buf.WriteString(`="`)
-					fmt.Fprint(buf, (*e)[k])
+					fmt.Fprint(buf, (*e))
 					buf.WriteByte('"')
 				}
 			} else {
