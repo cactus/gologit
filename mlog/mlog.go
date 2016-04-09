@@ -118,7 +118,7 @@ func (l *Logger) Output(depth int, level string, format string, extra ...interfa
 					buf.WriteByte(' ')
 					buf.WriteString(k)
 					buf.WriteString(`="`)
-					fmt.Fprint(buf, (*e))
+					fmt.Fprint(buf, (*e)[k])
 					buf.WriteByte('"')
 				}
 			} else {
