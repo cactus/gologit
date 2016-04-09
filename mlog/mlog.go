@@ -108,7 +108,7 @@ type Logger struct {
 	flags uint64
 }
 
-func (l *Logger) Output(depth int, level string, message string, data ...interface{}) {
+func (l *Logger) Output(depth int, level string, message string, data ...*LogMap) {
 	// get this as soon as possible
 	now := formattedDate.String()
 
@@ -139,53 +139,18 @@ func (l *Logger) Output(depth int, level string, message string, data ...interfa
 		buf.Write(QUOTE)
 	}
 
-	var mapv []*LogMap
-	var fmtv []interface{}
-	if len(data) > 0 {
-		for _, v := range data {
-			switch x := v.(type) {
-			case *LogMap:
-				if fmtv == nil {
-					fmtv = make([]interface{}, 0)
-				}
-				mapv = append(mapv, x)
-			case LogMap:
-				if fmtv == nil {
-					fmtv = make([]interface{}, 0)
-				}
-				mapv = append(mapv, &x)
-			default:
-				if mapv == nil {
-					mapv = make([]*LogMap, 0)
-				}
-				fmtv = append(fmtv, v)
-			}
-		}
-	}
-
 	buf.WriteString(` msg="`)
 	buf.WriteString(strings.TrimSpace(message))
 	buf.Write(QUOTE)
 
-	if len(mapv) > 0 {
-		for _, e := range mapv {
+	if len(data) > 0 {
+		for _, e := range data {
 			buf.Write(SPACE)
 			if flags&Lsort != 0 {
 				e.SortedWriteTo(buf)
 			} else {
 				e.WriteTo(buf)
 			}
-		}
-	}
-
-	lfmtv := len(fmtv)
-	if lfmtv > 0 {
-		for i, f := range fmtv {
-			buf.WriteString(` extra`)
-			buf.WriteString(strconv.Itoa(i + 1))
-			buf.Write(EQUAL_QUOTE)
-			fmt.Fprint(buf, f)
-			buf.Write(QUOTE)
 		}
 	}
 
@@ -209,19 +174,19 @@ func (l *Logger) HasDebug() bool {
 
 // Debugf calls log.Print if debug is true.
 // If debug is false, does nothing.
-func (l *Logger) Debug(message string, v ...interface{}) {
+func (l *Logger) Debug(message string, v ...*LogMap) {
 	if l.HasDebug() {
 		l.Output(2, "debug", message, v...)
 	}
 }
 
 // Print calls log.Print
-func (l *Logger) Info(message string, v ...interface{}) {
+func (l *Logger) Info(message string, v ...*LogMap) {
 	l.Output(2, "info", message, v...)
 }
 
 // Fatalf calls log.Print then calls os.Exit(1)
-func (l *Logger) Fatal(message string, v ...interface{}) {
+func (l *Logger) Fatal(message string, v ...*LogMap) {
 	l.Output(2, "fatal", message, v...)
 	os.Exit(1)
 }
@@ -243,19 +208,19 @@ func SetFlags(flags uint64) {
 }
 
 // Logs to the default Logger. See Logger.Debug
-func Debug(message string, v ...interface{}) {
+func Debug(message string, v ...*LogMap) {
 	if DefaultLogger.HasDebug() {
 		DefaultLogger.Output(2, "[D]", message, v...)
 	}
 }
 
 // Logs to the default Logger. See Logger.Print
-func Info(message string, v ...interface{}) {
+func Info(message string, v ...*LogMap) {
 	DefaultLogger.Output(2, "[I]", message, v...)
 }
 
 // Logs to the default Logger. See Logger.Fatalf
-func Fatalf(message string, v ...interface{}) {
+func Fatalf(message string, v ...*LogMap) {
 	DefaultLogger.Output(2, "[F]", message, v...)
 	os.Exit(1)
 }

@@ -11,46 +11,44 @@ import (
 type tester struct {
 	pattern   string
 	message   string
-	arguments []interface{}
+	arguments []*LogMap
 }
 
 var tests = []tester{
 	{
-		`level="info" msg="test one %d" x="y" extra1="1"`,
+		`level="info" msg="test one %d" x="y"`,
 		"test one %d",
-		[]interface{}{
-			1,
+		[]*LogMap{
 			&LogMap{"x": "y"},
 		},
 	},
 	{
-		`level="info" msg="test one %d" x="y" extra1="1"`,
+		`level="info" msg="test one %d" x="y"`,
 		"test one %d",
-		[]interface{}{
+		[]*LogMap{
 			&LogMap{"x": "y"},
-			1,
 		},
 	},
 	{
 		`level="info" msg="test one" x="y" y="z" t="u" u="v"`,
 		"test one",
-		[]interface{}{
-			LogMap{"x": "y", "y": "z"},
+		[]*LogMap{
+			&LogMap{"x": "y", "y": "z"},
 			&LogMap{"t": "u", "u": "v"},
 		},
 	},
 	{
 		`level="info" msg="test one" x="y" y="z" t="u" u="v"`,
 		"test one",
-		[]interface{}{
-			LogMap{"y": "z", "x": "y"},
+		[]*LogMap{
+			&LogMap{"y": "z", "x": "y"},
 			&LogMap{"u": "v", "t": "u"},
 		},
 	},
 	{
 		`level="info" msg="test one" x="1" y="2" z="3"`,
 		"test one",
-		[]interface{}{
+		[]*LogMap{
 			&LogMap{
 				"x": 1,
 				"y": 2,
@@ -59,15 +57,13 @@ var tests = []tester{
 		},
 	},
 	{
-		`level="info" msg="test: %s %d" extra1="test" extra2="1"`,
+		`level="info" msg="test: %s %d"`,
 		"test: %s %d",
-		[]interface{}{
-			"test", 1,
-		},
+		[]*LogMap{},
 	},
 }
 
-func testInfo(t *testing.T, message string, arguments []interface{}, pattern string) {
+func testInfo(t *testing.T, message string, arguments []*LogMap, pattern string) {
 	buf := new(bytes.Buffer)
 	logger := New(buf, Lbase|Lsort)
 
@@ -97,7 +93,7 @@ func BenchmarkSLoggingBase(b *testing.B) {
 	logger := New(ioutil.Discard, Lbase)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Info("this is a test: %s", "test", &LogMap{"x": 42})
+		logger.Info("this is a test: %s", &LogMap{"x": 42})
 	}
 }
 
@@ -105,7 +101,7 @@ func BenchmarkSLoggingTime(b *testing.B) {
 	logger := New(ioutil.Discard, Ltime)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Info("this is a test: %s", "test", &LogMap{"x": 42})
+		logger.Info("this is a test: %s", &LogMap{"x": 42})
 	}
 }
 
@@ -113,7 +109,7 @@ func BenchmarkSLoggingSortedKeys(b *testing.B) {
 	logger := New(ioutil.Discard, Lsort)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Info("this is a test: %s", "test", &LogMap{"x": 42})
+		logger.Info("this is a test: %s", &LogMap{"x": 42})
 	}
 }
 
@@ -121,7 +117,7 @@ func BenchmarkSLoggingDebugEnabled(b *testing.B) {
 	logger := New(ioutil.Discard, Ldebug)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Debug("this is a test: %s", "test", &LogMap{"x": 42})
+		logger.Debug("this is a test: %s", &LogMap{"x": 42})
 	}
 }
 
@@ -129,7 +125,7 @@ func BenchmarkSLoggingDebugDisabled(b *testing.B) {
 	logger := New(ioutil.Discard, Lbase)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Debug("this is a test: %s", "test", &LogMap{"x": 42})
+		logger.Debug("this is a test: %s", &LogMap{"x": 42})
 	}
 }
 
@@ -137,7 +133,7 @@ func BenchmarkSLoggingLikeStdlib(b *testing.B) {
 	logger := New(ioutil.Discard, Ltime)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Info(`this is a test: %s x=%d`, "test", 42)
+		logger.Info("this is a test: %s", &LogMap{"x": 42})
 	}
 }
 
@@ -145,7 +141,7 @@ func BenchmarkSStdlibLog(b *testing.B) {
 	logger := log.New(ioutil.Discard, "debug: ", log.LstdFlags)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Print(`this is a test: %s x=%d`, "test", 42)
+		logger.Print(`msg="%s" %s="%d"`, "this is a test: %s", "x", 42)
 	}
 }
 
@@ -153,7 +149,7 @@ func BenchmarkSStdlibLogShortfile(b *testing.B) {
 	logger := log.New(ioutil.Discard, "debug: ", log.LstdFlags|log.Lshortfile)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Print(`this is a test: %s x=%d`, "test", 42)
+		logger.Print(`msg="%s" %s="%d"`, "this is a test: %s", "x", 42)
 	}
 }
 
@@ -162,7 +158,7 @@ func BenchmarkPLoggingBase(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info("this is a test: %s", "test", &LogMap{"x": 42})
+			logger.Info("this is a test: %s", &LogMap{"x": 42})
 		}
 	})
 }
@@ -172,7 +168,7 @@ func BenchmarkPLoggingTime(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info("this is a test: %s", "test", &LogMap{"x": 42})
+			logger.Info("this is a test: %s", &LogMap{"x": 42})
 		}
 	})
 }
@@ -182,7 +178,7 @@ func BenchmarkPLoggingSortedKeys(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info("this is a test: %s", "test", &LogMap{"x": 42})
+			logger.Info("this is a test: %s", &LogMap{"x": 42})
 		}
 	})
 }
@@ -192,7 +188,7 @@ func BenchmarkPLoggingDebugEnabled(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Debug("this is a test: %s", "test", &LogMap{"x": 42})
+			logger.Debug("this is a test: %s", &LogMap{"x": 42})
 		}
 	})
 }
@@ -202,7 +198,7 @@ func BenchmarkPLoggingDebugDisabled(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Debug("this is a test: %s", "test", &LogMap{"x": 42})
+			logger.Debug("this is a test: %s", &LogMap{"x": 42})
 		}
 	})
 }
@@ -212,7 +208,7 @@ func BenchmarkPLoggingLikeStdlib(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info(`this is a test: %s x=%d`, "test", 42)
+			logger.Info("this is a test: %s", &LogMap{"x": 42})
 		}
 	})
 }
@@ -222,7 +218,7 @@ func BenchmarkPStdlibLog(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Print(`this is a test: %s x=%d`, "test", 42)
+			logger.Print(`msg="%s" %s="%d"`, "this is a test: %s", "x", 42)
 		}
 	})
 }
@@ -232,7 +228,7 @@ func BenchmarkPStdlibLogShortfile(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Print(`this is a test: %s x=%d`, "test", 42)
+			logger.Print(`msg="%s" %s="%d"`, "this is a test: %s", "x", 42)
 		}
 	})
 }
