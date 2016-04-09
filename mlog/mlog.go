@@ -8,11 +8,9 @@
 package mlog
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"runtime"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -36,69 +34,6 @@ var (
 	EQUAL_QUOTE = []byte{'=', '"'}
 	QUOTE_SPACE = []byte{'"', ' '}
 )
-
-type LogMap map[string]interface{}
-
-func (lm *LogMap) Keys() []string {
-	var keys []string
-	for k := range *lm {
-		keys = append(keys, k)
-	}
-	return keys
-}
-
-func (lm *LogMap) WriteTo(w io.Writer) (int64, error) {
-	i := 0
-	ilen := len(*lm)
-	for k, v := range *lm {
-		w.Write([]byte(k))
-		w.Write(EQUAL_QUOTE)
-		fmt.Fprint(w, v)
-		w.Write(QUOTE)
-		if i < ilen-1 {
-			w.Write(SPACE)
-		}
-		i++
-	}
-	// int64 to be compat with io.WriterTo
-	return int64(ilen), nil
-}
-
-func (lm *LogMap) SortedWriteTo(w io.Writer) (int64, error) {
-	keys := lm.Keys()
-	sort.Strings(keys)
-
-	i := 0
-	ilen := len(keys)
-	for _, k := range keys {
-		w.Write([]byte(k))
-		w.Write(EQUAL_QUOTE)
-		fmt.Fprint(w, (*lm)[k])
-		w.Write(QUOTE)
-		if i < ilen-1 {
-			w.Write(SPACE)
-		}
-		i++
-	}
-	// int64 to be compat with WriterTo above
-	return int64(ilen), nil
-}
-
-func (lm *LogMap) String() string {
-	buf := bufPool.Get()
-	defer bufPool.Put(buf)
-
-	lm.WriteTo(buf)
-	return buf.String()
-}
-
-func (lm *LogMap) SortedString() string {
-	buf := bufPool.Get()
-	defer bufPool.Put(buf)
-
-	lm.SortedWriteTo(buf)
-	return buf.String()
-}
 
 // A Logger represents a logging object, that embeds log.Logger, and
 // provides support for a toggle-able debug flag.
@@ -172,20 +107,20 @@ func (l *Logger) HasDebug() bool {
 	return flags&Ldebug != 0
 }
 
-// Debugf calls log.Print if debug is true.
-// If debug is false, does nothing.
+// Debug conditionally logs message and any LogMaps at level="debug"
+// If the Logger does not have the Ldebug flag, nothing is logged.
 func (l *Logger) Debug(message string, v ...*LogMap) {
 	if l.HasDebug() {
 		l.Output(2, "debug", message, v...)
 	}
 }
 
-// Print calls log.Print
+// Logs message and any LogMaps at level="info"
 func (l *Logger) Info(message string, v ...*LogMap) {
 	l.Output(2, "info", message, v...)
 }
 
-// Fatalf calls log.Print then calls os.Exit(1)
+// Logs message and any LogMaps at level="fatal", then calls os.Exit(1)
 func (l *Logger) Fatal(message string, v ...*LogMap) {
 	l.Output(2, "fatal", message, v...)
 	os.Exit(1)
@@ -210,17 +145,17 @@ func SetFlags(flags uint64) {
 // Logs to the default Logger. See Logger.Debug
 func Debug(message string, v ...*LogMap) {
 	if DefaultLogger.HasDebug() {
-		DefaultLogger.Output(2, "[D]", message, v...)
+		DefaultLogger.Output(2, "debug", message, v...)
 	}
 }
 
 // Logs to the default Logger. See Logger.Print
 func Info(message string, v ...*LogMap) {
-	DefaultLogger.Output(2, "[I]", message, v...)
+	DefaultLogger.Output(2, "info", message, v...)
 }
 
-// Logs to the default Logger. See Logger.Fatalf
-func Fatalf(message string, v ...*LogMap) {
-	DefaultLogger.Output(2, "[F]", message, v...)
+// Logs to the default Logger. See Logger.Fatal
+func Fatal(message string, v ...*LogMap) {
+	DefaultLogger.Output(2, "fatal", message, v...)
 	os.Exit(1)
 }
