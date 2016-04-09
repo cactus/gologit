@@ -10,23 +10,34 @@ package mlog
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"runtime"
+	"sort"
+	"strconv"
 	"sync"
+	"sync/atomic"
 )
 
-var bufPool = newBufferPool()
+var (
+	bufPool = newBufferPool()
+)
+
+const (
+	Lbase  uint64 = 0
+	Ltime  uint64 = 1 << iota // log the date+time
+	Ldebug                    // enable debug level log
+	Lsort                     // sort keys in output
+	Lstd   = Lbase | Ltime
+)
 
 type ExtraMap map[string]interface{}
 
 // A Logger represents a logging object, that embeds log.Logger, and
 // provides support for a toggle-able debug flag.
 type Logger struct {
-	mu          sync.Mutex // ensures atomic writes to out
-	out         io.Writer
-	enableDebug bool
-	showTime    bool
+	mu    sync.Mutex // ensures atomic writes are synchronized
+	out   io.Writer
+	flags uint64
 }
 
 func (l *Logger) Output(depth int, level string, format string, v ...interface{}) {
@@ -36,21 +47,28 @@ func (l *Logger) Output(depth int, level string, format string, v ...interface{}
 	buf := bufPool.Get()
 	defer bufPool.Put(buf)
 
-	if l.showTime {
-		fmt.Fprintf(buf, `time="%s" `, now)
+	flags := atomic.LoadUint64(&l.flags)
+	if flags&Ltime != 0 {
+		buf.Write([]byte(`time="`))
+		buf.WriteString(now)
+		buf.WriteString(`" `)
 	}
 
-	if level != "" {
-		fmt.Fprintf(buf, `level="%s" `, level)
-	}
+	buf.WriteString(`level="`)
+	buf.WriteString(level)
+	buf.WriteByte('"')
 
-	if l.enableDebug {
+	if flags&Ldebug != 0 {
 		_, file, line, ok := runtime.Caller(depth)
 		if !ok {
 			file = "???"
 			line = 0
 		}
-		fmt.Fprintf(buf, `caller="%s:%s" `, file, line)
+		buf.WriteString(` caller="`)
+		buf.WriteString(file)
+		buf.WriteByte(':')
+		buf.WriteString(strconv.Itoa(line))
+		buf.WriteByte('"')
 	}
 
 	var mapv []*ExtraMap
@@ -69,26 +87,39 @@ func (l *Logger) Output(depth int, level string, format string, v ...interface{}
 		}
 	}
 
-	if format == "" {
-		fmt.Fprint(buf, `msg="" `)
-	} else {
-		fmt.Fprint(buf, `msg="`)
+	buf.WriteString(` msg="`)
+	if format != "" {
 		fmt.Fprintf(buf, format, fmtv...)
-		buf.Write([]byte(`" `))
 	}
+	buf.WriteByte('"')
 
 	if len(mapv) > 0 {
 		for _, e := range mapv {
-			for k, v := range *e {
-				fmt.Fprintf(buf, `%s="`, k)
-				fmt.Fprint(buf, v)
-				buf.Write([]byte(`" `))
+			if flags&Lsort != 0 {
+				var keys []string
+				for k := range *e {
+					keys = append(keys, k)
+				}
+				sort.Strings(keys)
+				for _, k := range keys {
+					buf.WriteByte(' ')
+					buf.WriteString(k)
+					buf.WriteString(`="`)
+					fmt.Fprint(buf, (*e)[k])
+					buf.WriteByte('"')
+				}
+			} else {
+				for k, v := range *e {
+					buf.WriteByte(' ')
+					buf.WriteString(k)
+					buf.WriteString(`="`)
+					fmt.Fprint(buf, v)
+					buf.WriteByte('"')
+				}
 			}
 		}
 	}
 
-	// trim off trailing space
-	buf.Truncate(buf.Len() - 1)
 	buf.WriteByte('\n')
 
 	l.mu.Lock()
@@ -96,18 +127,21 @@ func (l *Logger) Output(depth int, level string, format string, v ...interface{}
 	buf.WriteTo(l.out)
 }
 
-func (l *Logger) HasTimestamp() bool {
-	return l.showTime
+func (l *Logger) SetFlags(flags uint64) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	atomic.StoreUint64(&l.flags, flags)
 }
 
-func (l *Logger) HasDebugging() bool {
-	return l.enableDebug
+func (l *Logger) HasDebug() bool {
+	flags := atomic.LoadUint64(&l.flags)
+	return flags&Ldebug != 0
 }
 
 // Debugf calls log.Printf if debug is true.
 // If debug is false, does nothing.
 func (l *Logger) Debugf(format string, v ...interface{}) {
-	if l.enableDebug == true {
+	if l.HasDebug() {
 		l.Output(2, "debug", format, v...)
 	}
 }
@@ -125,30 +159,23 @@ func (l *Logger) Fatalf(format string, v ...interface{}) {
 
 // New creates a new Logger.
 // The debug argument specifies whether debug should be set or not.
-func New(out io.Writer, enableDebug, showTime bool) *Logger {
-	flags := log.LstdFlags
-	if enableDebug == true {
-		flags = flags | log.Lshortfile
+func New(out io.Writer, flags uint64) *Logger {
+	return &Logger{
+		out:   out,
+		flags: flags,
 	}
-	return &Logger{out: out, enableDebug: enableDebug, showTime: showTime}
 }
 
 // default Logger
-var DefaultLogger = New(os.Stderr, false, false)
+var DefaultLogger = New(os.Stderr, Lstd)
 
-// returns whether debugging is enabled for the defualt Logger.
-func HasDebugging() bool {
-	return DefaultLogger.HasDebugging()
-}
-
-// returns whether timestamp output is enabled by the defualt Logger.
-func HasTimestamp() bool {
-	return DefaultLogger.HasTimestamp()
+func SetFlags(flags uint64) {
+	DefaultLogger.SetFlags(flags)
 }
 
 // Logs to the default Logger. See Logger.Debugf
 func Debugf(format string, v ...interface{}) {
-	if DefaultLogger.HasDebugging() {
+	if DefaultLogger.HasDebug() {
 		DefaultLogger.Output(2, "[D]", format, v...)
 	}
 }
