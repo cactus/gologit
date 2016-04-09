@@ -91,7 +91,7 @@ func TestAll(t *testing.T) {
 	}
 }
 
-func BenchmarkLoggingBase(b *testing.B) {
+func BenchmarkSLoggingBase(b *testing.B) {
 	logger := New(ioutil.Discard, Lbase)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -99,7 +99,7 @@ func BenchmarkLoggingBase(b *testing.B) {
 	}
 }
 
-func BenchmarkLoggingTime(b *testing.B) {
+func BenchmarkSLoggingTime(b *testing.B) {
 	logger := New(ioutil.Discard, Ltime)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -107,7 +107,7 @@ func BenchmarkLoggingTime(b *testing.B) {
 	}
 }
 
-func BenchmarkLoggingSortedKeys(b *testing.B) {
+func BenchmarkSLoggingSortedKeys(b *testing.B) {
 	logger := New(ioutil.Discard, Lsort)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -115,7 +115,7 @@ func BenchmarkLoggingSortedKeys(b *testing.B) {
 	}
 }
 
-func BenchmarkLoggingDebugEnabled(b *testing.B) {
+func BenchmarkSLoggingDebugEnabled(b *testing.B) {
 	logger := New(ioutil.Discard, Ldebug)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -123,7 +123,7 @@ func BenchmarkLoggingDebugEnabled(b *testing.B) {
 	}
 }
 
-func BenchmarkLoggingDebugDisabled(b *testing.B) {
+func BenchmarkSLoggingDebugDisabled(b *testing.B) {
 	logger := New(ioutil.Discard, Lbase)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -131,7 +131,7 @@ func BenchmarkLoggingDebugDisabled(b *testing.B) {
 	}
 }
 
-func BenchmarkLoggingLikeStdlib(b *testing.B) {
+func BenchmarkSLoggingLikeStdlib(b *testing.B) {
 	logger := New(ioutil.Discard, Ltime)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -139,7 +139,7 @@ func BenchmarkLoggingLikeStdlib(b *testing.B) {
 	}
 }
 
-func BenchmarkStdlibLog(b *testing.B) {
+func BenchmarkSStdlibLog(b *testing.B) {
 	logger := log.New(ioutil.Discard, "debug: ", log.LstdFlags)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -147,7 +147,7 @@ func BenchmarkStdlibLog(b *testing.B) {
 	}
 }
 
-func BenchmarkStdlibLogShortfile(b *testing.B) {
+func BenchmarkSStdlibLogShortfile(b *testing.B) {
 	logger := log.New(ioutil.Discard, "debug: ", log.LstdFlags|log.Lshortfile)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
