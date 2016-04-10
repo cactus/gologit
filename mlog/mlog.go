@@ -54,7 +54,7 @@ func (l *Logger) Output(depth int, level string, message string, data ...*LogMap
 
 	flags := atomic.LoadUint64(&l.flags)
 	if flags&Ldatetime != 0 {
-		buf.Write([]byte(`time="`))
+		buf.WriteString(`time="`)
 		buf.WriteString(now)
 		buf.Write(QUOTE_SPACE)
 	}
