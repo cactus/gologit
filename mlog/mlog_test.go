@@ -119,3 +119,8 @@ func TestAllDebug(t *testing.T) {
 		testInfo(t, logger, tt.level, tt.message, tt.pattern, tt.arguments)
 	}
 }
+
+func TestOnce(t *testing.T) {
+	logger := New(ioutil.Discard, Ldatetime)
+	logger.Info("test this", &LogMap{"test": 1})
+}

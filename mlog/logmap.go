@@ -39,7 +39,9 @@ func (lm *LogMap) WriteTo(w io.Writer) (int64, error) {
 		// an allocation. Since write will not mutate
 		// the string, this *should* be safe.
 		//w.Write([]byte(k))
-		w.Write(stringtoslicebytetmp(&k))
+		p := stringtoslicebytetmp(&k)
+		w.Write(p)
+		p = nil
 		w.Write(EQUAL_QUOTE)
 		fmt.Fprint(w, v)
 		w.Write(QUOTE)
@@ -63,7 +65,9 @@ func (lm *LogMap) SortedWriteTo(w io.Writer) (int64, error) {
 		// an allocation. Since write will not mutate
 		// the string, this *should* be safe.
 		//w.Write([]byte(k))
-		w.Write(stringtoslicebytetmp(&k))
+		p := stringtoslicebytetmp(&k)
+		w.Write(p)
+		p = nil
 		w.Write(EQUAL_QUOTE)
 		fmt.Fprint(w, (*lm)[k])
 		w.Write(QUOTE)
