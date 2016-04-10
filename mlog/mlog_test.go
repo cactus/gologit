@@ -3,19 +3,20 @@ package mlog
 import (
 	"bytes"
 	"io/ioutil"
-	"log"
 	"regexp"
 	"testing"
 )
 
 type tester struct {
+	level     string
 	pattern   string
 	message   string
 	arguments []*LogMap
 }
 
-var tests = []tester{
+var infoTests = []tester{
 	{
+		"info",
 		`level="info" msg="test one %d" x="y"`,
 		"test one %d",
 		[]*LogMap{
@@ -23,6 +24,7 @@ var tests = []tester{
 		},
 	},
 	{
+		"info",
 		`level="info" msg="test one %d" x="y"`,
 		"test one %d",
 		[]*LogMap{
@@ -30,6 +32,7 @@ var tests = []tester{
 		},
 	},
 	{
+		"info",
 		`level="info" msg="test one" x="y" y="z" t="u" u="v"`,
 		"test one",
 		[]*LogMap{
@@ -38,6 +41,7 @@ var tests = []tester{
 		},
 	},
 	{
+		"info",
 		`level="info" msg="test one" x="y" y="z" t="u" u="v"`,
 		"test one",
 		[]*LogMap{
@@ -46,6 +50,7 @@ var tests = []tester{
 		},
 	},
 	{
+		"info",
 		`level="info" msg="test one" x="1" y="2" z="3"`,
 		"test one",
 		[]*LogMap{
@@ -56,19 +61,36 @@ var tests = []tester{
 			},
 		},
 	},
+}
+
+var debugTests = []tester{
 	{
-		`level="info" msg="test: %s %d"`,
+		"debug",
+		`level="debug" msg="test: %s %d"`,
 		"test: %s %d",
 		[]*LogMap{},
 	},
 }
 
-func testInfo(t *testing.T, message string, arguments []*LogMap, pattern string) {
-	buf := new(bytes.Buffer)
-	logger := New(buf, Lbase|Lsort)
+func testInfo(t *testing.T, logger *Logger, level, message, pattern string, arguments []*LogMap) {
+	buf := &bytes.Buffer{}
+	logger.out = buf
 
-	logger.Info(message, arguments...)
+	switch level {
+	case "debug":
+		logger.Debug(message, arguments...)
+	default:
+		logger.Info(message, arguments...)
+	}
 	line := buf.String()
+
+	if len(line) == 0 && len(pattern) != 0 {
+		t.Errorf("log output should match\n%12s %q\n%12s %q",
+			"expected:", pattern[1:len(pattern)-1],
+			"actual:", line)
+		return
+	}
+
 	line = line[0 : len(line)-1]
 	pattern = "^" + pattern + "$"
 	matched, err := regexp.MatchString(pattern, line)
@@ -82,153 +104,18 @@ func testInfo(t *testing.T, message string, arguments []*LogMap, pattern string)
 	}
 }
 
-func TestAll(t *testing.T) {
-	for _, testcase := range tests {
-		testInfo(t, testcase.message, testcase.arguments, testcase.pattern)
-		testInfo(t, testcase.message, testcase.arguments, testcase.pattern)
+func TestAllInfo(t *testing.T) {
+	logger := New(ioutil.Discard, Lbase|Lsort)
+	for _, tt := range infoTests {
+		testInfo(t, logger, tt.level, tt.message, tt.pattern, tt.arguments)
+		testInfo(t, logger, tt.level, tt.message, tt.pattern, tt.arguments)
 	}
 }
 
-func BenchmarkSLoggingBase(b *testing.B) {
-	logger := New(ioutil.Discard, Lbase)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		logger.Info("this is a test: %s", &LogMap{"x": 42})
+func TestAllDebug(t *testing.T) {
+	logger := New(ioutil.Discard, Lbase|Lsort|Ldebug)
+	for _, tt := range debugTests {
+		testInfo(t, logger, tt.level, tt.message, tt.pattern, tt.arguments)
+		testInfo(t, logger, tt.level, tt.message, tt.pattern, tt.arguments)
 	}
-}
-
-func BenchmarkSLoggingTime(b *testing.B) {
-	logger := New(ioutil.Discard, Ltime)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		logger.Info("this is a test: %s", &LogMap{"x": 42})
-	}
-}
-
-func BenchmarkSLoggingSortedKeys(b *testing.B) {
-	logger := New(ioutil.Discard, Lsort)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		logger.Info("this is a test: %s", &LogMap{"x": 42})
-	}
-}
-
-func BenchmarkSLoggingDebugEnabled(b *testing.B) {
-	logger := New(ioutil.Discard, Ldebug)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		logger.Debug("this is a test: %s", &LogMap{"x": 42})
-	}
-}
-
-func BenchmarkSLoggingDebugDisabled(b *testing.B) {
-	logger := New(ioutil.Discard, Lbase)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		logger.Debug("this is a test: %s", &LogMap{"x": 42})
-	}
-}
-
-func BenchmarkSLoggingLikeStdlib(b *testing.B) {
-	logger := New(ioutil.Discard, Ltime)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		logger.Info("this is a test: %s", &LogMap{"x": 42})
-	}
-}
-
-func BenchmarkSStdlibLog(b *testing.B) {
-	logger := log.New(ioutil.Discard, "debug: ", log.LstdFlags)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		logger.Print(`msg="%s" %s="%d"`, "this is a test: %s", "x", 42)
-	}
-}
-
-func BenchmarkSStdlibLogShortfile(b *testing.B) {
-	logger := log.New(ioutil.Discard, "debug: ", log.LstdFlags|log.Lshortfile)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		logger.Print(`msg="%s" %s="%d"`, "this is a test: %s", "x", 42)
-	}
-}
-
-func BenchmarkPLoggingBase(b *testing.B) {
-	logger := New(ioutil.Discard, Lbase)
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Info("this is a test: %s", &LogMap{"x": 42})
-		}
-	})
-}
-
-func BenchmarkPLoggingTime(b *testing.B) {
-	logger := New(ioutil.Discard, Ltime)
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Info("this is a test: %s", &LogMap{"x": 42})
-		}
-	})
-}
-
-func BenchmarkPLoggingSortedKeys(b *testing.B) {
-	logger := New(ioutil.Discard, Lsort)
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Info("this is a test: %s", &LogMap{"x": 42})
-		}
-	})
-}
-
-func BenchmarkPLoggingDebugEnabled(b *testing.B) {
-	logger := New(ioutil.Discard, Ldebug)
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Debug("this is a test: %s", &LogMap{"x": 42})
-		}
-	})
-}
-
-func BenchmarkPLoggingDebugDisabled(b *testing.B) {
-	logger := New(ioutil.Discard, Lbase)
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Debug("this is a test: %s", &LogMap{"x": 42})
-		}
-	})
-}
-
-func BenchmarkPLoggingLikeStdlib(b *testing.B) {
-	logger := New(ioutil.Discard, Ltime)
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Info("this is a test: %s", &LogMap{"x": 42})
-		}
-	})
-}
-
-func BenchmarkPStdlibLog(b *testing.B) {
-	logger := log.New(ioutil.Discard, "debug: ", log.LstdFlags)
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Print(`msg="%s" %s="%d"`, "this is a test: %s", "x", 42)
-		}
-	})
-}
-
-func BenchmarkPStdlibLogShortfile(b *testing.B) {
-	logger := log.New(ioutil.Discard, "debug: ", log.LstdFlags|log.Lshortfile)
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Print(`msg="%s" %s="%d"`, "this is a test: %s", "x", 42)
-		}
-	})
 }

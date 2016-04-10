@@ -18,11 +18,13 @@ import (
 )
 
 const (
-	Lbase  uint64 = 0
-	Ltime  uint64 = 1 << iota // log the date+time
-	Ldebug                    // enable debug level log
-	Lsort                     // sort keys in output
-	Lstd   = Lbase | Ltime
+	Lbase      uint64 = 0
+	Ldatetime  uint64 = 1 << iota // log the date+time
+	Ldebug                        // enable debug level log
+	Llongfile                     // full file name and line number: /a/b/c/d.go:23
+	Lshortfile                    // final file name element and line number: d.go:23. overrides Llongfile
+	Lsort                         // sort keys in output
+	Lstd       = Lbase | Ldatetime
 )
 
 var (
@@ -51,7 +53,7 @@ func (l *Logger) Output(depth int, level string, message string, data ...*LogMap
 	defer bufPool.Put(buf)
 
 	flags := atomic.LoadUint64(&l.flags)
-	if flags&Ltime != 0 {
+	if flags&Ldatetime != 0 {
 		buf.Write([]byte(`time="`))
 		buf.WriteString(now)
 		buf.Write(QUOTE_SPACE)
@@ -61,12 +63,24 @@ func (l *Logger) Output(depth int, level string, message string, data ...*LogMap
 	buf.WriteString(level)
 	buf.Write(QUOTE)
 
-	if flags&Ldebug != 0 {
+	if flags&(Lshortfile|Llongfile) != 0 {
 		_, file, line, ok := runtime.Caller(depth)
 		if !ok {
 			file = "???"
 			line = 0
 		}
+
+		if flags&Lshortfile != 0 {
+			short := file
+			for i := len(file) - 1; i > 0; i-- {
+				if file[i] == '/' {
+					short = file[i+1:]
+					break
+				}
+			}
+			file = short
+		}
+
 		buf.WriteString(` caller="`)
 		buf.WriteString(file)
 		buf.Write(COLON)
@@ -149,7 +163,7 @@ func Debug(message string, v ...*LogMap) {
 	}
 }
 
-// Logs to the default Logger. See Logger.Print
+// Logs to the default Logger. See Logger.Info
 func Info(message string, v ...*LogMap) {
 	DefaultLogger.Output(2, "info", message, v...)
 }
