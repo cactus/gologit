@@ -3,7 +3,7 @@ gologit
 
 A simple wrapper for Go "log" that provides toggle-able debug support.
 
-**NOTE**: gologit is currently deprecated. Check out
+**NOTE**: gologit is currently **deprecated**. Check out
 [mlog](https://github.com/cactus/mlog) instead.
 
 ## Installation
